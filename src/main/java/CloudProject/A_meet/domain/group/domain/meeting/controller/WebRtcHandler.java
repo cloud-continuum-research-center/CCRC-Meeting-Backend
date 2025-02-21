@@ -47,25 +47,13 @@ public class WebRtcHandler extends TextWebSocketHandler {
 
 
     @Override
-    public void afterConnectionEstablished(WebSocketSession session) throws Exception {
-        session.sendMessage(new TextMessage("Connected successfully"));
-
-        sessions.add(session);
-        logger.info("WebSocket connection established: {}", session.getId());
-    }
-
-    @Override
     public void handleTextMessage(WebSocketSession session, TextMessage message) throws Exception {
-
-        //JsonObject jsonMessage = JsonParser.parseString(message.getPayload()).getAsJsonObject();
-
         // 최초 연결 시에만 DB에 저장
         if (!session.getAttributes().containsKey("userMeetingId")) {
 
             JsonReader reader = new JsonReader(new StringReader(message.getPayload()));
             reader.setLenient(true); // 잘못된 JSON도 허용
             JsonObject jsonMessage = JsonParser.parseReader(reader).getAsJsonObject();
-
 
             Long userId = jsonMessage.get("userId").getAsLong();
             Long meetingId = jsonMessage.get("meetingId").getAsLong();
@@ -108,9 +96,9 @@ public class WebRtcHandler extends TextWebSocketHandler {
             }
 
             sendParticipantsList(meetingId);
-
-            session.sendMessage(new TextMessage("User " + userId + " has joined the meeting " + meetingId));
-            logger.info("User {} has joined the meeting {}", userId, meetingId);
+//            session.sendMessage(new TextMessage("User " + userId + " has joined meeting " + meetingId));
+            session.sendMessage(new TextMessage(message.getPayload()));
+            logger.info("User {} has joined meeting {}", userId, meetingId);
         } else {
             // 최초 연결 이후에는 메시지 전달만
             for (WebSocketSession s : sessions) {
@@ -121,42 +109,56 @@ public class WebRtcHandler extends TextWebSocketHandler {
         }
     }
 
+    @Override
+    public void afterConnectionEstablished(WebSocketSession session) throws Exception {
+//        session.sendMessage(new TextMessage("Connected successfully"));
+
+        sessions.add(session);
+        logger.info("WebSocket connection established: {}", session.getId());
+    }
+
 
     @Override
     public void afterConnectionClosed(WebSocketSession session, CloseStatus status) {
-        sessions.remove(session);
+        synchronized (session) {
+            sessions.remove(session);
 
-        Long userMeetingId = (Long) session.getAttributes().get("userMeetingId");
+            Long userMeetingId = (Long) session.getAttributes().get("userMeetingId");
 
-        if (userMeetingId != null) {
-            UserMeeting userMeeting = userMeetingRepository.findById(userMeetingId)
-                    .orElseThrow(() -> new CustomException(ErrorCode.MEETING_NOT_FOUND));
-
-            userMeeting.setExitTime(LocalDateTime.now());
-            userMeetingRepository.save(userMeeting);
-
-            Long meetingId = userMeeting.getMeetingId().getMeetingId();
-
-            // 미팅 참가자 목록에서 사용자 제거
-            meetingParticipants.computeIfPresent(meetingId, (k, v) -> {
-                v.remove(userMeeting.getUserId().getNickname());
-                return v.isEmpty() ? null : v;  // 목록이 비면 null로 설정
-            });
-
-            if (!meetingParticipants.containsKey(meetingId)) {
-                Meeting meeting = meetingRepository.findByMeetingId(meetingId)
+            if (userMeetingId != null) {
+                UserMeeting userMeeting = userMeetingRepository.findById(userMeetingId)
                         .orElseThrow(() -> new CustomException(ErrorCode.MEETING_NOT_FOUND));
-                meeting.setEndedAt(LocalDateTime.now());
-                meetingRepository.save(meeting);  // 변경 사항 저장
-                logger.info("Meeting {} has been ended as all participants left.", meetingId);
+
+                userMeeting.setExitTime(LocalDateTime.now());
+                userMeetingRepository.save(userMeeting);
+
+                Long meetingId = userMeeting.getMeetingId().getMeetingId();
+
+                // 미팅 참가자 목록에서 사용자 제거
+                meetingParticipants.computeIfPresent(meetingId, (k, v) -> {
+                    v.remove(userMeeting.getUserId().getNickname());
+                    return v.isEmpty() ? null : v;
+                });
+                if (meetingParticipants.get(meetingId) == null) { // key가 아직 남아있다면 삭제
+                    meetingParticipants.remove(meetingId);
+                }
+
+                if (!meetingParticipants.containsKey(meetingId)) {
+                    Meeting meeting = meetingRepository.findByMeetingId(meetingId)
+                            .orElseThrow(() -> new CustomException(ErrorCode.MEETING_NOT_FOUND));
+                    System.out.println("eeeeeeeeee");
+                    meeting.setEndedAt(LocalDateTime.now());
+                    meetingRepository.save(meeting);
+
+                    logger.info("Meeting {} has been ended as all participants left.", meetingId);
+                }
+
+                sendParticipantsList(meetingId);
+                logger.info("User {} has left the meeting {}", userMeeting.getUserId().getUserId(), userMeeting.getMeetingId().getMeetingId());
             }
 
-
-            sendParticipantsList(meetingId);
-            logger.info("User {} has left the meeting {}", userMeeting.getUserId().getUserId(), userMeeting.getMeetingId().getMeetingId());
+            logger.info("WebSocket connection closed: {}", session.getId());
         }
-
-        logger.info("WebSocket connection closed: {}", session.getId());
     }
 
     private void sendParticipantsList(Long meetingId) {

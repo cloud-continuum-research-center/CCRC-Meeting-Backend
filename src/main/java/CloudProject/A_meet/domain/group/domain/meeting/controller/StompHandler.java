@@ -2,6 +2,7 @@ package CloudProject.A_meet.domain.group.domain.meeting.controller;
 
 import CloudProject.A_meet.domain.group.domain.bot.dto.BotResponse;
 import CloudProject.A_meet.domain.group.domain.bot.service.BotService;
+import CloudProject.A_meet.domain.group.domain.meeting.dto.LeaveRequest;
 import CloudProject.A_meet.domain.group.domain.meeting.dto.ParticipantResponse;
 import CloudProject.A_meet.domain.group.domain.user.domain.User;
 import CloudProject.A_meet.domain.group.domain.user.repository.UserRepository;
@@ -60,18 +61,41 @@ public class StompHandler {
         return participants;
     }
     // 참가자 퇴장
+//    @MessageMapping("/leave")
+//    @SendTo("/topic/meeting/participants")
+//    public List<ParticipantResponse> handleLeave(Long userId) {
+//        // 사용자 조회
+//        User user = userRepository.findByUserId(userId)
+//                .orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
+//
+//        // 참가자 리스트에서 해당 사용자 제거
+//        participants.removeIf(participant -> false);
+//
+//        return participants;
+//    }
     @MessageMapping("/leave")
     @SendTo("/topic/meeting/participants")
-    public List<ParticipantResponse> handleLeave(Long userId) {
+    public List<ParticipantResponse> handleLeave(LeaveRequest request) {
+        Long userId = request.getUserId(); // JSON에서 userId 추출
+
         // 사용자 조회
         User user = userRepository.findByUserId(userId)
                 .orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
 
+        String userNickname = user.getNickname(); // 닉네임 가져오기
+
         // 참가자 리스트에서 해당 사용자 제거
-        participants.removeIf(participant -> participant.getUserId().equals(user.getUserId()));
+        boolean removed = participants.removeIf(participant -> participant.getNickname().equals(userNickname));
+
+        if (removed) {
+            System.out.println("User " + userNickname + " (" + userId + ") has left the meeting.");
+        } else {
+            System.out.println("Failed to remove user " + userNickname + " (" + userId + ") from the meeting list.");
+        }
 
         return participants;
     }
+
 
     @MessageMapping("/summary")
     @SendTo("/topic/meeting/participants")
