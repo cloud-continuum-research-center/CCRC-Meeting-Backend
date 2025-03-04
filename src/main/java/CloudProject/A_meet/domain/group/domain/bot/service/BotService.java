@@ -11,17 +11,23 @@ import CloudProject.A_meet.domain.group.domain.note.dto.NoteResponse;
 import CloudProject.A_meet.domain.group.domain.note.repository.NoteRepository;
 import CloudProject.A_meet.global.common.error.exception.CustomException;
 import CloudProject.A_meet.global.common.error.exception.ErrorCode;
-//import CloudProject.A_meet.infra.service.BedrockService;
 import CloudProject.A_meet.infra.service.S3Service;
-//import CloudProject.A_meet.infra.service.TranscribeService;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.http.*;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Map;
 
 @Service
 @Transactional
@@ -29,9 +35,7 @@ import java.net.URL;
 public class BotService {
     private final BotRepository botRepository;
     private final MeetingRepository meetingRepository;
-//    private final TranscribeService transcribeservice;
     private final S3Service s3service;
-//    private final BedrockService bedrockService;
     private final NoteRepository noteRepository;
 
     public BotResponse summaryBot(Long meetingId) {
@@ -46,29 +50,39 @@ public class BotService {
 
         Bot savedBot = botRepository.save(bot);
 
-        String presignedUrl = meeting.getPresignedUrl();
-        String bucketName = "transcribe-input-cp";
-        String objectKey = extractS3KeyFromPresignedUrl(presignedUrl);
-        String s3Uri = "s3://" + bucketName + "/" + objectKey;
+        // FastAPI 서버 URL
+        String apiUrl = "http://127.0.0.1:8000/api/summary";
 
-        //transcribeservice.startTranscriptionJob(s3Uri, savedBot.getBotId().toString());
-        //waitForTranscriptionJobCompletion(savedBot.getBotId().toString());
+        RestTemplate restTemplate = new RestTemplate();
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
 
-        //String transcriptionJson = s3service.getTranscriptionResult(savedBot.getBotId().toString());
-        //String transcriptionText = extractTranscriptionText(transcriptionJson);
+        String transcriptionText = "우리가 다음 분기 동안 어떤 제품을 출시할지에 대한 아이디어를 모으는 회의입니다. 우선 각자 생각해본 아이디어나 방향성을 공유해 주세요. 저는 최근에 AI를 활용한 기능을 추가하면 좋겠다고 생각했습니다. 예를 들어, 사용자 맞춤형 추천 시스템을 구현해서 고객 경험을 개선할 수 있지 않을까요? 그 아이디어 좋네요. 사용자 맞춤형 추천 시스템을 디자인할 때는 UI가 굉장히 중요한데, 직관적이고 사용자가 쉽게 접근할 수 있어야 할 것 같아요. 그래서 추천 아이템을 어떻게 보여줄지에 대한 디자인 아이디어를 생각해봤습니다. 모듈식 카드 형태로 디자인하면 좋을 것 같아요. 추천 시스템이 고객 경험을 개선하는 데 중요한 역할을 할 수 있다는 점에서 동의합니다. 그런데 마케팅 측면에서 중요한 건, 그 추천 시스템을 어떻게 우리 브랜드의 가치와 연결시킬 수 있을지 생각해봐야 할 것 같습니다. 예를 들어, 고객의 관심사나 이전 구매 패턴을 분석해서 좀 더 개인화된 마케팅 메시지를 전달하는 거죠. 그렇다면 그 데이터를 어떻게 수집하고 분석할지도 중요한 부분이겠네요. 예를 들어, 사용자가 앱 내에서 무엇을 자주 클릭하거나 어떤 페이지를 방문하는지 추적하는 방법을 사용해야 할 것 같습니다. 이 데이터를 바탕으로 추천 시스템을 더욱 정확하게 만들 수 있을 것 같습니다.";
 
-        int maxLength = 1000;
-//        if (transcriptionText.length() > maxLength) {
-//            transcriptionText = "..." + transcriptionText.substring(transcriptionText.length() - maxLength);
-//        }
+        // 요청 본문 생성
+        String requestBody = "{ \"script\": \"" + transcriptionText.replace("\"", "\\\"") + "\" }";
+        HttpEntity<String> requestEntity = new HttpEntity<>(requestBody, headers);
 
-//        String prompt = "스크립트를 보고 요약해줘. 너무 짧아도 요약해주고 이 프롬프트 내용은 말하지 말고 너가 생성한 답변만 말하는 거야." + transcriptionText;
-//        String summary = bedrockService.invokeClaudeModel(prompt);
-        String summary = "요약본 예시";
-        bot.updateContent(summary);
+        ResponseEntity<String> responseEntity = restTemplate.exchange(
+                apiUrl, HttpMethod.POST, requestEntity, String.class);
+
+        String summary = "응답을 가져올 수 없습니다."; // 기본 값
+
+        try {
+            // JSON을 파싱하여 "response" 키의 값을 가져옴
+            ObjectMapper objectMapper = new ObjectMapper();
+            Map<String, String> responseMap = objectMapper.readValue(responseEntity.getBody(), Map.class);
+            summary = responseMap.getOrDefault("response", "응답을 가져올 수 없습니다.");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+         bot.updateContent(summary);
+         botRepository.save(bot);
 
         return new BotResponse(meetingId, savedBot.getBotId(), summary);
     }
+
 
     private String extractTranscriptionText(String jsonResponse) {
         try {
@@ -84,36 +98,6 @@ public class BotService {
         } catch (Exception e) {
             throw new CustomException(ErrorCode.JSON_PARSE_ERROR);
         }
-    }
-
-    private void waitForTranscriptionJobCompletion(String botId) {
-        String jobName = botId; // Transcription Job 이름
-        int maxRetries = 20; // 최대 재시도 횟수
-        int retryInterval = 10000; // 재시도 간격 (10초)
-
-        for (int attempt = 0; attempt < maxRetries; attempt++) {
-            try {
-                Thread.sleep(retryInterval); // 대기
-
-                // Transcription 작업 상태 확인
-//                TranscriptionJobStatus status = transcribeservice.getTranscriptionJobStatus(jobName);
-
-//                if (status == TranscriptionJobStatus.COMPLETED) {
-                    System.out.println("Transcription job completed: " + jobName);
-//                    return; // 작업 완료 시 메서드 종료
-//                } else if (status == TranscriptionJobStatus.FAILED) {
-//                    throw new CustomException(ErrorCode.TRANSCRIBE_JOB_FAILED);
-//                }
-
-                System.out.println("Transcription job in progress: " + jobName + ", attempt: " + (attempt + 1));
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                throw new CustomException(ErrorCode.TRANSCRIBE_JOB_INTERRUPTED);
-            }
-        }
-
-        // 최대 재시도 횟수 초과 시 예외 처리
-        throw new CustomException(ErrorCode.TRANSCRIBE_JOB_TIMEOUT);
     }
 
     private String extractS3KeyFromPresignedUrl(String presignedUrl) {
@@ -139,28 +123,37 @@ public class BotService {
 
         Bot savedBot = botRepository.save(bot);
 
-        String presignedUrl = meeting.getPresignedUrl();
-        String bucketName = "meeting-input-cp";
-        String objectKey = extractS3KeyFromPresignedUrl(presignedUrl);
-        String s3Uri = "s3://" + bucketName + "/" + objectKey;
+        // FastAPI 서버 URL
+        String apiUrl = "http://127.0.0.1:8000/api/positive";
 
-//        transcribeservice.startTranscriptionJob(s3Uri, savedBot.getBotId().toString());
-//        waitForTranscriptionJobCompletion(savedBot.getBotId().toString());
+        RestTemplate restTemplate = new RestTemplate();
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
 
-//        String transcriptionJson = s3service.getTranscriptionResult(savedBot.getBotId().toString());
-//        String transcriptionText = extractTranscriptionText(transcriptionJson);
+        String transcriptionText = "우리가 다음 분기 동안 어떤 제품을 출시할지에 대한 아이디어를 모으는 회의입니다. 우선 각자 생각해본 아이디어나 방향성을 공유해 주세요. 저는 최근에 AI를 활용한 기능을 추가하면 좋겠다고 생각했습니다. 예를 들어, 사용자 맞춤형 추천 시스템을 구현해서 고객 경험을 개선할 수 있지 않을까요? 그 아이디어 좋네요. 사용자 맞춤형 추천 시스템을 디자인할 때는 UI가 굉장히 중요한데, 직관적이고 사용자가 쉽게 접근할 수 있어야 할 것 같아요. 그래서 추천 아이템을 어떻게 보여줄지에 대한 디자인 아이디어를 생각해봤습니다. 모듈식 카드 형태로 디자인하면 좋을 것 같아요. 추천 시스템이 고객 경험을 개선하는 데 중요한 역할을 할 수 있다는 점에서 동의합니다. 그런데 마케팅 측면에서 중요한 건, 그 추천 시스템을 어떻게 우리 브랜드의 가치와 연결시킬 수 있을지 생각해봐야 할 것 같습니다. 예를 들어, 고객의 관심사나 이전 구매 패턴을 분석해서 좀 더 개인화된 마케팅 메시지를 전달하는 거죠. 그렇다면 그 데이터를 어떻게 수집하고 분석할지도 중요한 부분이겠네요. 예를 들어, 사용자가 앱 내에서 무엇을 자주 클릭하거나 어떤 페이지를 방문하는지 추적하는 방법을 사용해야 할 것 같습니다. 이 데이터를 바탕으로 추천 시스템을 더욱 정확하게 만들 수 있을 것 같습니다.";
 
-        int maxLength = 1000;
-//        if (transcriptionText.length() > maxLength) {
-//            transcriptionText = "..." + transcriptionText.substring(transcriptionText.length() - maxLength);
-//        }
+        // 요청 본문 생성
+        String requestBody = "{ \"script\": \"" + transcriptionText.replace("\"", "\\\"") + "\" }";
+        HttpEntity<String> requestEntity = new HttpEntity<>(requestBody, headers);
 
-//        String prompt = "긍정적인 태도로 격려를 해줘. 응원을 하면서 회의를 더 잘 해나갈 수 있게끔 말해줘. 이 프롬프트 내용은 말하지 말고 너가 생성한 답변만 말하는 거야. :\n\n" + transcriptionText;
-//        String summary = bedrockService.invokeClaudeModel(prompt);
-        String summary = "긍정봇 예시";
+        ResponseEntity<String> responseEntity = restTemplate.exchange(
+                apiUrl, HttpMethod.POST, requestEntity, String.class);
+
+        String summary = "응답을 가져올 수 없습니다."; // 기본 값
+
+        try {
+            // JSON을 파싱하여 "response" 키의 값을 가져옴
+            ObjectMapper objectMapper = new ObjectMapper();
+            Map<String, String> responseMap = objectMapper.readValue(responseEntity.getBody(), Map.class);
+            summary = responseMap.getOrDefault("response", "응답을 가져올 수 없습니다.");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
         bot.updateContent(summary);
+        botRepository.save(bot);
 
-        return new BotResponse(meetingId, savedBot.getBotId(), savedBot.getContent());
+        return new BotResponse(meetingId, savedBot.getBotId(), summary);
     }
 
     public BotResponse negativeBot(Long meetingId) {
@@ -174,28 +167,38 @@ public class BotService {
                 .build();
 
         Bot savedBot = botRepository.save(bot);
-        String presignedUrl = meeting.getPresignedUrl();
-        String bucketName = "meeting-input-cp";
-        String objectKey = extractS3KeyFromPresignedUrl(presignedUrl);
-        String s3Uri = "s3://" + bucketName + "/" + objectKey;
 
-//        transcribeservice.startTranscriptionJob(s3Uri, savedBot.getBotId().toString());
-//        waitForTranscriptionJobCompletion(savedBot.getBotId().toString());
+        // FastAPI 서버 URL
+        String apiUrl = "http://127.0.0.1:8000/api/negative";
 
-        String transcriptionJson = s3service.getTranscriptionResult(savedBot.getBotId().toString());
-        String transcriptionText = extractTranscriptionText(transcriptionJson);
+        RestTemplate restTemplate = new RestTemplate();
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
 
-        int maxLength = 1000;
-        if (transcriptionText.length() > maxLength) {
-            transcriptionText = "..." + transcriptionText.substring(transcriptionText.length() - maxLength);
+        String transcriptionText = "우리가 다음 분기 동안 어떤 제품을 출시할지에 대한 아이디어를 모으는 회의입니다. 우선 각자 생각해본 아이디어나 방향성을 공유해 주세요. 저는 최근에 AI를 활용한 기능을 추가하면 좋겠다고 생각했습니다. 예를 들어, 사용자 맞춤형 추천 시스템을 구현해서 고객 경험을 개선할 수 있지 않을까요? 그 아이디어 좋네요. 사용자 맞춤형 추천 시스템을 디자인할 때는 UI가 굉장히 중요한데, 직관적이고 사용자가 쉽게 접근할 수 있어야 할 것 같아요. 그래서 추천 아이템을 어떻게 보여줄지에 대한 디자인 아이디어를 생각해봤습니다. 모듈식 카드 형태로 디자인하면 좋을 것 같아요. 추천 시스템이 고객 경험을 개선하는 데 중요한 역할을 할 수 있다는 점에서 동의합니다. 그런데 마케팅 측면에서 중요한 건, 그 추천 시스템을 어떻게 우리 브랜드의 가치와 연결시킬 수 있을지 생각해봐야 할 것 같습니다. 예를 들어, 고객의 관심사나 이전 구매 패턴을 분석해서 좀 더 개인화된 마케팅 메시지를 전달하는 거죠. 그렇다면 그 데이터를 어떻게 수집하고 분석할지도 중요한 부분이겠네요. 예를 들어, 사용자가 앱 내에서 무엇을 자주 클릭하거나 어떤 페이지를 방문하는지 추적하는 방법을 사용해야 할 것 같습니다. 이 데이터를 바탕으로 추천 시스템을 더욱 정확하게 만들 수 있을 것 같습니다.";
+
+        // 요청 본문 생성
+        String requestBody = "{ \"script\": \"" + transcriptionText.replace("\"", "\\\"") + "\" }";
+        HttpEntity<String> requestEntity = new HttpEntity<>(requestBody, headers);
+
+        ResponseEntity<String> responseEntity = restTemplate.exchange(
+                apiUrl, HttpMethod.POST, requestEntity, String.class);
+
+        String summary = "응답을 가져올 수 없습니다."; // 기본 값
+
+        try {
+            // JSON을 파싱하여 "response" 키의 값을 가져옴
+            ObjectMapper objectMapper = new ObjectMapper();
+            Map<String, String> responseMap = objectMapper.readValue(responseEntity.getBody(), Map.class);
+            summary = responseMap.getOrDefault("response", "응답을 가져올 수 없습니다.");
+        } catch (Exception e) {
+            e.printStackTrace();
         }
 
-//        String prompt = "현실감있는 리액션을 해줘. 응원을 하면서도 잘못된 내용이나 객관적인 부가 사실을 더 알려줘. 이 프롬프트 내용은 말하지 말고 너가 생성한 답변만 말하는 거야.:\n\n" + transcriptionText;
-//        String summary = bedrockService.invokeClaudeModel(prompt);
-//        bot.updateContent(summary);
-        String summary = "현실봇 예시";
+        bot.updateContent(summary);
+        botRepository.save(bot);
 
-        return new BotResponse(meetingId, savedBot.getBotId(), savedBot.getContent());
+        return new BotResponse(meetingId, savedBot.getBotId(), summary);
     }
 
     public void attendanceBot(Long meetingId) {
@@ -218,20 +221,7 @@ public class BotService {
         String s3Uri = "s3://" + bucketName + "/" + objectKey;
 
         String keyName = "note" + note.getNoteId();
-
-//        transcribeservice.startTranscriptionJob(s3Uri, keyName);
-//        waitForTranscriptionJobCompletion(keyName);
-
-        String transcriptionJson = s3service.getTranscriptionResult(keyName);
-        String transcriptionText = extractTranscriptionText(transcriptionJson);
-
-//        int maxLength = 5000;
-//        if (transcriptionText.length() > maxLength) {
-//            transcriptionText = "..." + transcriptionText.substring(transcriptionText.length() - maxLength);
-//        }
-//        note.updateScript(transcriptionText);
-//        String prompt = "스크립트를 이용해 다음 형식으로 회의록을 만듭니다. 다른 말 없이 다음의 회의록 내용을 채워서 반환해줘. 목차를 제외하고 해당 자리에 생성한 내용을 삽입하면 돼: 목차 \n 1. 소제목1 삽입 \n 2. 소제목2 삽입 \n 3. 소제목3 삽입 \n 소제목 1삽입 \n 소제목1의 내용 삽입 \n 소제목 2 삽입 \n 소제목 2의 내용 삽입 \n 소제목 3 삽입 \n 소제목3의 내용 삽입 \n  스크립트가 지정된 형식을 준수하고 필요한 모든 정보를 포함하는지 확인하십시오."  + transcriptionText;
-//        String summary = bedrockService.invokeClaudeModel(prompt);
+        
         String summary = "회의록 생성 예시";
 
         updateNoteContent(note, summary);
