@@ -41,6 +41,13 @@ public class BotController {
         return ResponseEntity.status(200).body(botResponse);
     }
 
+    @Operation(summary = "회의록 기반 봇 호출", description = "부정 리액션봇을 조회하는 API")
+    @GetMapping("/loader")
+    public ResponseEntity<BotResponse> loader(@RequestParam Long meetingId) {
+        BotResponse botResponse = botService.loaderBot(meetingId);
+        return ResponseEntity.status(200).body(botResponse);
+    }
+
     @Operation(summary = "불참자 메일 보내기 봇 호출", description = "불참자 메일 보내기 봇을 조회하는 API")
     @GetMapping("/attendance")
     public ResponseEntity<Void> attendance(@RequestParam Long meetingId) {
