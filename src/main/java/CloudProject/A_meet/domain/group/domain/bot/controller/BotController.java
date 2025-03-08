@@ -41,7 +41,7 @@ public class BotController {
         return ResponseEntity.status(200).body(botResponse);
     }
 
-    @Operation(summary = "회의록 기반 봇 호출", description = "부정 리액션봇을 조회하는 API")
+    @Operation(summary = "회의록 기반 봇 호출", description = "회의록 기반 답변 API")
     @GetMapping("/loader")
     public ResponseEntity<BotResponse> loader(@RequestParam Long meetingId) {
         BotResponse botResponse = botService.loaderBot(meetingId);

@@ -4,6 +4,7 @@ import CloudProject.A_meet.domain.group.domain.meeting.domain.Meeting;
 import CloudProject.A_meet.domain.group.domain.meeting.domain.UserMeeting;
 import CloudProject.A_meet.domain.group.domain.meeting.repository.MeetingRepository;
 import CloudProject.A_meet.domain.group.domain.meeting.repository.UserMeetingRepository;
+import CloudProject.A_meet.domain.group.domain.meeting.service.MeetingService;
 import CloudProject.A_meet.domain.group.domain.team.domain.Team;
 import CloudProject.A_meet.domain.group.domain.team.repository.TeamRepository;
 import CloudProject.A_meet.domain.group.domain.user.domain.User;
@@ -36,6 +37,8 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public class WebRtcHandler extends TextWebSocketHandler {
 
     private static final Logger logger = LoggerFactory.getLogger(WebSocketHandler.class);
+
+    private final MeetingService meetingService;
     private final CopyOnWriteArrayList<WebSocketSession> sessions = new CopyOnWriteArrayList<>();
     private final UserMeetingRepository userMeetingRepository;
     private final UserRepository userRepository;
@@ -146,11 +149,13 @@ public class WebRtcHandler extends TextWebSocketHandler {
                 if (!meetingParticipants.containsKey(meetingId)) {
                     Meeting meeting = meetingRepository.findByMeetingId(meetingId)
                             .orElseThrow(() -> new CustomException(ErrorCode.MEETING_NOT_FOUND));
-                    System.out.println("eeeeeeeeee");
+
                     meeting.setEndedAt(LocalDateTime.now());
                     meetingRepository.save(meeting);
 
                     logger.info("Meeting {} has been ended as all participants left.", meetingId);
+
+                    meetingService.endMeeting(meetingId);
                 }
 
                 sendParticipantsList(meetingId);
