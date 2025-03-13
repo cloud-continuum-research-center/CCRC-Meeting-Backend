@@ -38,7 +38,7 @@ public class NoteResponse {
             .summary(note.getSummary())
             .script(note.getScript())
             .participants(participants)
-            .presignedUrl(note.getPresignedUrl())
+            .presignedUrl(note.getAudioUrl())
             .startedAt(note.getCreatedAt())
             .build();
     }

@@ -20,7 +20,6 @@ public class MeetingResponse {
     private LocalDateTime startedAt;
     private LocalDateTime endedAt;
     private Duration duration;
-    private String presignedUrl;
     private List<String> participants;
 
     public static MeetingResponse of(Meeting meeting) {
@@ -30,7 +29,6 @@ public class MeetingResponse {
                 meeting.getStartedAt(),
                 meeting.getEndedAt(),
                 meeting.getDuration(),
-                meeting.getPresignedUrl(),
                 meeting.getParticipants()
         );
     }

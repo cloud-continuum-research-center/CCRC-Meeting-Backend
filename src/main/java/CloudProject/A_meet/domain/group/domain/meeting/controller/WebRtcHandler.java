@@ -155,7 +155,7 @@ public class WebRtcHandler extends TextWebSocketHandler {
 
                     logger.info("Meeting {} has been ended as all participants left.", meetingId);
 
-                    meetingService.endMeeting(meetingId);
+                    // meetingService.endMeeting(meetingId);
                 }
 
                 sendParticipantsList(meetingId);

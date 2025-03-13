@@ -261,7 +261,7 @@ public class BotService {
     public NoteResponse createNote(Long noteId) {
         Note note = transactionalFindByNoteId(noteId);
 
-        String presignedUrl = note.getPresignedUrl();
+        String presignedUrl = note.getAudioUrl();
         String bucketName = "meeting-input-cp";
         String objectKey = extractS3KeyFromPresignedUrl(presignedUrl);
         String s3Uri = "s3://" + bucketName + "/" + objectKey;

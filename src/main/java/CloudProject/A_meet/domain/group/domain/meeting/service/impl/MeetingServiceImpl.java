@@ -64,7 +64,6 @@ public class MeetingServiceImpl implements MeetingService {
         meetingRepository.save(newMeeting);
 
         URL presignedUrl = createPresignedUrl(newMeeting.getMeetingId());
-        newMeeting.setPresignedUrl(presignedUrl.toString());
 
         return MeetingResponse.of(newMeeting);
     }
@@ -204,7 +203,7 @@ public class MeetingServiceImpl implements MeetingService {
         Note note = Note.builder()
                 .meetingId(meeting)
                 .title(meeting.getTitle())
-                .presignedUrl(meeting.getPresignedUrl())
+                .audioUrl("x")
                 .summary("content")
                 .members(members)
                 .build();

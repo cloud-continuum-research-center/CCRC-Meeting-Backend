@@ -42,10 +42,6 @@ public class Meeting {
 
     private Duration duration;
 
-    @Setter
-    @Column(length = 2048)
-    private String presignedUrl;
-
     @ElementCollection(fetch = FetchType.EAGER)
     private List<String> participants;
 

@@ -61,7 +61,7 @@ public class NoteServiceImpl implements NoteService {
         note.updateCreatedAt(request.getCreatedDate());
         String s3key = "note/" + note.getNoteId() + ".mp3";
         URL presignedUrl = s3service.generatePresignedUrl(s3key, Duration.ofHours(24));
-        note.updatePresignedUrl(presignedUrl.toString());
+        note.updateAudioUrl(presignedUrl.toString());
         return new UploadResponse(note.getNoteId(), presignedUrl.toString());
     }
 }

@@ -44,8 +44,8 @@ public class Note extends BaseTimeEntity {
     @Column(columnDefinition = "TEXT")
     private String script;
 
-    @Column(length = 1000)
-    private String presignedUrl;
+    @Column(length = 500)
+    private String audioUrl;
 
     private String members;
 
@@ -53,9 +53,10 @@ public class Note extends BaseTimeEntity {
         this.members = members;
     }
 
-    public void updatePresignedUrl(String presignedUrl) {
-        this.presignedUrl = presignedUrl;
+    public void updateAudioUrl(String audioUrl) {
+        this.audioUrl = audioUrl;
     }
+
     public void updateCreatedAt(String createdAt) {
         if (createdAt == null || createdAt.isBlank()) {
             throw new IllegalArgumentException("Invalid dateTime: dateTime cannot be null or empty");
