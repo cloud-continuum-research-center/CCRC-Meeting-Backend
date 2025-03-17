@@ -1,6 +1,6 @@
 package CloudProject.A_meet.domain.group.domain.meeting.service.impl;
 
-import CloudProject.A_meet.domain.group.domain.bot.service.BotService;
+//import CloudProject.A_meet.domain.group.domain.bot.service.BotService;
 import CloudProject.A_meet.domain.group.domain.meeting.domain.Meeting;
 import CloudProject.A_meet.domain.group.domain.meeting.domain.UserMeeting;
 import CloudProject.A_meet.domain.group.domain.meeting.dto.MeetingLogResponse;
@@ -39,8 +39,8 @@ public class MeetingServiceImpl implements MeetingService {
     private final TeamRepository teamRepository;
     private final UserMeetingRepository userMeetingRepository;
     private final S3Service s3Service;
-    private final BotService botService;
-    private final NoteRepository noteRepository;
+//    private final BotService botService;
+//    private final NoteRepository noteRepository;
 
     // 1. 회의 생성
     @Transactional
@@ -188,26 +188,26 @@ public class MeetingServiceImpl implements MeetingService {
         return MeetingResponse.of(meeting);
     }
 
-    @Transactional
-    public NoteResponse endMeeting(Long meetingId) {
-        Meeting meeting = meetingRepository.findById(meetingId)
-                .orElseThrow(() -> new CustomException(ErrorCode.MEETING_NOT_FOUND));
-        List<UserMeeting> userMeetings = userMeetingRepository.findByMeetingId(meeting);
-
-        String members = userMeetings.stream()
-            .map(userMeeting -> userMeeting.getUserId().getNickname())
-            .collect(Collectors.joining(", "));
-
-        meeting.setEndedAt(LocalDateTime.now());
-        meeting.setDuration();
-        Note note = Note.builder()
-                .meetingId(meeting)
-                .title(meeting.getTitle())
-                .audioUrl("x")
-                .summary("content")
-                .members(members)
-                .build();
-        noteRepository.save(note);
-        return botService.endMeeting(note.getNoteId());
-    }
+//    @Transactional
+//    public NoteResponse endMeeting(Long meetingId) {
+//        Meeting meeting = meetingRepository.findById(meetingId)
+//                .orElseThrow(() -> new CustomException(ErrorCode.MEETING_NOT_FOUND));
+//        List<UserMeeting> userMeetings = userMeetingRepository.findByMeetingId(meeting);
+//
+//        String members = userMeetings.stream()
+//            .map(userMeeting -> userMeeting.getUserId().getNickname())
+//            .collect(Collectors.joining(", "));
+//
+//        meeting.setEndedAt(LocalDateTime.now());
+//        meeting.setDuration();
+//        Note note = Note.builder()
+//                .meetingId(meeting)
+//                .title(meeting.getTitle())
+//                .audioUrl("x")
+//                .summary("content")
+//                .members(members)
+//                .build();
+//        noteRepository.save(note);
+//        return botService.endMeeting(note.getNoteId());
+//    }
 }

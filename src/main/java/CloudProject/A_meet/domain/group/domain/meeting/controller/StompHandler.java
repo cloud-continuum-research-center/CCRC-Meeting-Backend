@@ -1,7 +1,7 @@
 package CloudProject.A_meet.domain.group.domain.meeting.controller;
 
 import CloudProject.A_meet.domain.group.domain.bot.dto.BotResponse;
-import CloudProject.A_meet.domain.group.domain.bot.service.BotService;
+//import CloudProject.A_meet.domain.group.domain.bot.service.BotService;
 import CloudProject.A_meet.domain.group.domain.meeting.dto.LeaveRequest;
 import CloudProject.A_meet.domain.group.domain.meeting.dto.ParticipantResponse;
 import CloudProject.A_meet.domain.group.domain.user.domain.User;
@@ -27,7 +27,7 @@ public class StompHandler {
 
     private final List<ParticipantResponse> participants = Collections.synchronizedList(new ArrayList<>());
     private final UserRepository userRepository;
-    private final BotService botService;
+//    private final BotService botService;
     private static final Logger logger = LoggerFactory.getLogger(StompHandler.class);
 
     // 참가자 입장
@@ -97,25 +97,25 @@ public class StompHandler {
     }
 
 
-    @MessageMapping("/summary")
-    @SendTo("/topic/meeting/participants")
-    public ResponseEntity<BotResponse> summarize(Long meetingId) {
-        BotResponse botResponse = botService.summaryBot(meetingId);
-        return ResponseEntity.status(200).body(botResponse);
-    }
-
-
-    @MessageMapping("/positive")
-    @SendTo("/topic/meeting/participants")
-    public ResponseEntity<BotResponse> positive(Long meetingId) {
-        BotResponse botResponse = botService.positiveBot(meetingId);
-        return ResponseEntity.status(200).body(botResponse);
-    }
-
-    @MessageMapping("/negative")
-    @SendTo("/topic/meeting/participants")
-    public ResponseEntity<BotResponse> negative(Long meetingId) {
-        BotResponse botResponse = botService.negativeBot(meetingId);
-        return ResponseEntity.status(200).body(botResponse);
-    }
+//    @MessageMapping("/summary")
+//    @SendTo("/topic/meeting/participants")
+//    public ResponseEntity<BotResponse> summarize(Long meetingId) {
+//        BotResponse botResponse = botService.summaryBot(meetingId);
+//        return ResponseEntity.status(200).body(botResponse);
+//    }
+//
+//
+//    @MessageMapping("/positive")
+//    @SendTo("/topic/meeting/participants")
+//    public ResponseEntity<BotResponse> positive(Long meetingId) {
+//        BotResponse botResponse = botService.positiveBot(meetingId);
+//        return ResponseEntity.status(200).body(botResponse);
+//    }
+//
+//    @MessageMapping("/negative")
+//    @SendTo("/topic/meeting/participants")
+//    public ResponseEntity<BotResponse> negative(Long meetingId) {
+//        BotResponse botResponse = botService.negativeBot(meetingId);
+//        return ResponseEntity.status(200).body(botResponse);
+//    }
 }

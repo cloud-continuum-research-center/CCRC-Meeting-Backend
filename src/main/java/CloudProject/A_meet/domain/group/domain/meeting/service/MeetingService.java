@@ -31,5 +31,5 @@ public interface MeetingService {
     MeetingResponse updateMeetingTitle(Long meetingId, String newTitle);
 
     //8. 회의 종료
-    NoteResponse endMeeting(Long meetingId);
+//    NoteResponse endMeeting(Long meetingId);
 }

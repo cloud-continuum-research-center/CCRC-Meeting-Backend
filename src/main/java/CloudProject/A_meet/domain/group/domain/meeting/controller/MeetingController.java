@@ -84,12 +84,12 @@ public class MeetingController {
         return ResponseEntity.ok(updatedMeeting);
     }
 
-    @Operation(summary = "End Meeting", description = "End a meeting")
-    @GetMapping("/end")
-    public ResponseEntity<NoteResponse> endMeeting(
-        @RequestParam("meetingId") Long meetingId) {
-        NoteResponse noteResponse = meetingService.endMeeting(meetingId);
-        return ResponseEntity.ok(noteResponse);
-    }
+//    @Operation(summary = "End Meeting", description = "End a meeting")
+//    @GetMapping("/end")
+//    public ResponseEntity<NoteResponse> endMeeting(
+//        @RequestParam("meetingId") Long meetingId) {
+//        NoteResponse noteResponse = meetingService.endMeeting(meetingId);
+//        return ResponseEntity.ok(noteResponse);
+//    }
 
 }
