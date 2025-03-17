@@ -1,6 +1,7 @@
 package CloudProject.A_meet.domain.group.domain.note.domain;
 
 import CloudProject.A_meet.domain.group.domain.meeting.domain.Meeting;
+import CloudProject.A_meet.domain.group.domain.team.domain.Team;
 import CloudProject.A_meet.global.common.error.exception.CustomException;
 import CloudProject.A_meet.global.common.error.exception.ErrorCode;
 import CloudProject.A_meet.global.common.model.BaseTimeEntity;
@@ -34,6 +35,10 @@ public class Note extends BaseTimeEntity {
     @ManyToOne
     @JoinColumn(name="meeting_id")
     private Meeting meetingId;
+
+    @ManyToOne
+    @JoinColumn(name="team_id")
+    private Team teamId;
 
     @Column(nullable = false)
     private String title;
