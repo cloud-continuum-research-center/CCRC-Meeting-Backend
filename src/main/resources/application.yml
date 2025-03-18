@@ -73,10 +73,6 @@ springdoc:
       - /api/**
 
 server:
-  port: 8443
+  port: 8080
   ssl:
-    enabled: true
-    key-store: ${SSL_KEY}
-    key-store-password: ${SSL_PASSWORD}
-    key-store-type: PKCS12            # 인증서 타입 (PKCS12 또는 JKS)
-    key-alias: spring             # 인증서 별칭
+    enabled: false

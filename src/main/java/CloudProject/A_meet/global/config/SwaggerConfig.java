@@ -23,7 +23,7 @@ public class SwaggerConfig {
 
     @Bean
     public OpenAPI openAPI() {
-        Server localServer = new Server().url("https://localhost:8443").description("Local server");
+        Server localServer = new Server().url("http://localhost:8080").description("Local server");
 
         Server dynamicServer = null;
         if (serverUrl != null) {
