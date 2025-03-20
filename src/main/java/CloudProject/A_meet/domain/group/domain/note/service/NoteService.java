@@ -9,5 +9,7 @@ public interface NoteService {
     // 1. 회의록 상세 조회
     NoteResponse getNoteDetail(Long meetingId);
 
+    NoteResponse getNoteDetailwithNoteId(Long noteId);
+
     UploadResponse uploadFile(UploadRequest request);
 }

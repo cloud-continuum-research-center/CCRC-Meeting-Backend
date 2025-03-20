@@ -50,6 +50,18 @@ public class NoteServiceImpl implements NoteService {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public NoteResponse getNoteDetailwithNoteId(Long noteId) {
+
+        // 1. 회의록 객체 조회
+        Note note = noteRepository.findById(noteId)
+                .orElseThrow(() -> new CustomException(ErrorCode.NOTE_NOT_FOUND));
+
+        // 2. 반환 객체로 변환하여 반환
+        return NoteResponse.of(note);
+    }
+
+    @Override
     @Transactional
     public UploadResponse uploadFile(UploadRequest request) {
         Note note = Note.builder()

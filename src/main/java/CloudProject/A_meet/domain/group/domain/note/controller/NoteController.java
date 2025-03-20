@@ -33,12 +33,20 @@ public class NoteController {
     private final NoteService noteService;
 //    private final BotService botService;
 
-    @Operation(summary = "Get Note Detail", description = "Fetch detailed information for a specific note.")
+    @Operation(summary = "Get Note Detail with MeetingId", description = "Fetch detailed information for a specific note.")
     @GetMapping
     public ResponseEntity<NoteResponse> getNoteDetail(@RequestParam Long meetingId) {
         NoteResponse noteResponse = noteService.getNoteDetail(meetingId);
         return ResponseEntity.status(200).body(noteResponse);
     }
+
+    @Operation(summary = "Get Note Detail with NoteId", description = "Fetch detailed information for a specific note.")
+    @GetMapping("/noteId")
+    public ResponseEntity<NoteResponse> getNoteDetailwithNoteId(@RequestParam Long noteId) {
+        NoteResponse noteResponse = noteService.getNoteDetailwithNoteId(noteId);
+        return ResponseEntity.status(200).body(noteResponse);
+    }
+
 
     @Operation(summary = "회의록 수동 생성(업로드 API)", description = "회의록 수동 생성 API")
     @PostMapping("/upload")
