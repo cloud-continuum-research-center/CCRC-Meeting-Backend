@@ -97,12 +97,12 @@ public class StompHandler {
     }
 
 
-//    @MessageMapping("/summary")
-//    @SendTo("/topic/meeting/participants")
-//    public ResponseEntity<BotResponse> summarize(Long meetingId) {
-//        BotResponse botResponse = botService.summaryBot(meetingId);
-//        return ResponseEntity.status(200).body(botResponse);
-//    }
+    @MessageMapping("/summary")
+    @SendTo("/topic/meeting/participants")
+    public ResponseEntity<BotResponse> summarize(Long meetingId, String text) {
+        BotResponse botResponse = new BotResponse(meetingId, 1L, text);
+        return ResponseEntity.status(200).body(botResponse);
+    }
 //
 //
 //    @MessageMapping("/positive")
